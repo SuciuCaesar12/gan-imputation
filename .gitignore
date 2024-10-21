@@ -163,3 +163,5 @@ cython_debug/
 
 /hexagan
 /mnist_data
+/wandb
+/mnist/experiments

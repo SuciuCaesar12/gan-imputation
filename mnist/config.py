@@ -1,5 +1,15 @@
-from pydantic import BaseModel
-from typing import List
+from pydantic import BaseModel, Field
+from typing import List, Optional
+from pathlib import Path
+
+
+class FlagsConfig(BaseModel):
+    use_wandb: bool = True
+    missing_imputation: bool = True
+
+
+class PathConfig(BaseModel):
+    save_model_dir: Path = r'mnist\experiments\demo'
 
 
 class DataConfig(BaseModel):
@@ -7,7 +17,13 @@ class DataConfig(BaseModel):
 
 
 class TrainingConfig(BaseModel):
-    batch_size: int = 8
+    num_epochs: int = 5
+    batch_size: int = 16
+    device: str = 'cuda'
+    lr: float = 0.002
+    
+    n_critic: int  = 1
+    alpha1: float = 5.
 
 
 class ModelConfig(BaseModel):
@@ -17,10 +33,18 @@ class ModelConfig(BaseModel):
     num_classes: int = 10
 
 
+class WandBConfig(BaseModel):
+    project: str = "HexaGAN"
+    save_model: bool = True
+    train_log_interval: int = 10
+
+
 class Config(BaseModel):
+    flags: FlagsConfig = FlagsConfig()
     data: DataConfig = DataConfig()
     training: TrainingConfig = TrainingConfig()
     model: ModelConfig = ModelConfig()
+    wandb: WandBConfig = WandBConfig()
 
 
 settings = Config()

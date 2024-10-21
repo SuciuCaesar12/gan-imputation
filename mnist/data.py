@@ -102,6 +102,8 @@ class MissingDataImputationDataLoader:
         
         self.gen_loader = DataLoaderWrapper(DataLoader(self.dataset, batch_size=BATCH_SIZE, shuffle=True))
         self.disc_loader = DataLoaderWrapper(DataLoader(self.dataset, batch_size=BATCH_SIZE, shuffle=True))
+        
+        self.summary()
     
     def get_gen_batch(self):
         return self.gen_loader.get_batch()
@@ -114,17 +116,16 @@ class MissingDataImputationDataLoader:
         print("Summary of MNIST Dataset".center(40))
         print("=" * 40)
         
-        # Display missing rate with percentage formatting
         print(f"{'Missing rate:':<25} {MISSING_DATA_PERCENT:.2%}")
-        
-        # Print the number of classes
         print(f"{'# of classes:':<25} {NUM_CLASSES}")
-        
-        # Print the number of samples with comma formatting
         print(f"{'# of samples:':<25} {len(self.dataset):,}")
         
         print("=" * 40)
         print()
+    
+    
+    def __len__(self):
+        return len(self.gen_loader.loader)
 
 
 if __name__ == "__main__":
