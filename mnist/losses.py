@@ -25,6 +25,15 @@ class BaseLoss:
         raise NotImplementedError("Subclasses must implement this method")
 
 
+class LossCE(BaseLoss):
+    def __init__(self, name='CE'):
+        super().__init__(name)
+        self.criterion = torch.nn.CrossEntropyLoss(reduction='mean')
+    
+    def _calculate_loss(self, y, y_hat):
+        return self.criterion(y_hat, y)
+
+
 class LossDiscDataMI(BaseLoss):
     def __init__(self, name="disc_data_mi"):
         super().__init__(name)
@@ -47,13 +56,3 @@ class LossReconstruct(BaseLoss):
         
     def _calculate_loss(self, x, x_hat, m):
         return ((1 - m) * ((x - x_hat) ** 2)).sum() / ((1 - m).sum() + 1e-8)
-
-
-class LossStages:
-    missing_data_imputation = (LossDiscDataMI(), LossGenMI(), LossReconstruct())
-
-    @classmethod
-    def get(cls):
-        return {
-            'missing_data_imputation': cls.missing_data_imputation
-        }

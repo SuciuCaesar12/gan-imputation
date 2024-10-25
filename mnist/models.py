@@ -1,15 +1,47 @@
 import torch
 import torch.nn as nn
+
+from losses import *
 from config import settings
 
 
-C, H, W = INPUT_SHAPE = settings.model.input_shape
-HIDDEN_DIM = settings.model.hidden_dim
-LATENT_DIM = settings.model.latent_dim
+C, H, W = INPUT_SHAPE = settings.mnist.input_shape
+NUM_CLASSES = settings.mnist.num_classes
 N_FEATURES = C * H * W
-NUM_CLASSES = settings.model.num_classes
-DEVICE = settings.training.device
-LR = settings.training.lr
+
+HIDDEN_DIM = settings.hexa.hidden_dim
+LR = settings.hexa.lr
+
+
+class Classifier(nn.Module):
+    def __init__(self):
+        super(Classifier, self).__init__()
+        self.layer1 = nn.Sequential(
+            nn.Conv2d(1, 16, kernel_size=5, padding=2),  # Input channels, output channels, kernel size
+            nn.BatchNorm2d(16),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2))  # Reduces dimension by a factor of 2
+        self.layer2 = nn.Sequential(
+            nn.Conv2d(16, 32, kernel_size=5, padding=2),
+            nn.BatchNorm2d(32),
+            nn.ReLU(),
+            nn.MaxPool2d(2))
+        self.fc = nn.Linear(7*7*32, 10)  # Fully connected layer
+        
+        self._init_losses()
+
+    def _init_losses(self):
+        self.loss_ce = LossCE()
+    
+    def configure_optimizers(self):
+        self.opt = torch.optim.Adam(self.parameters(), lr=0.001)
+    
+    def forward(self, x):
+        out = self.layer1(x)
+        out = self.layer2(out)
+        out = out.view(out.size(0), -1)  # Flatten the tensor
+        out = self.fc(out)
+        return out
 
 
 class Encoder(nn.Module):
@@ -149,10 +181,6 @@ class DiscriminatorMI(nn.Module):
         return self.sigmoid(logits)
 
 
-class Classifier:
-    pass
-
-
 class HexaGAN(nn.Module):
     
     def __init__(self):
@@ -161,6 +189,7 @@ class HexaGAN(nn.Module):
         self.encoder = Encoder()
         self.generator_mi = GeneratorMI()
         self.discriminator_mi = DiscriminatorMI()
+        self._init_losses()
         
         self.summary()
     
@@ -177,6 +206,14 @@ class HexaGAN(nn.Module):
     
     def discriminate(self, x_hat, y):
         return self.discriminator_mi(x_hat, y)
+    
+    def _init_losses(self):
+        self.loss_recon = LossReconstruct()
+        self.loss_gen_mi = LossGenMI()
+        self.loss_disc_data_mi = LossDiscDataMI()
+    
+    def losses(self):
+        return [self.loss_recon, self.loss_gen_mi, self.loss_disc_data_mi]
     
     def configure_optimizers(self):
         self.encoder_opt = torch.optim.RMSprop(self.encoder.parameters(), lr=LR)
